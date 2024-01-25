@@ -24,7 +24,7 @@ def main(nginx_logs):
     all_verbs = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
     all_meth_c = list(nginx_logs.aggregate([
         {"$match": {"method":
-                    {"$in": ['GET', 'POST', 'PUT']}}
+                    {"$in": ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']}}
          },
         {"$group": {"_id": "$method", "count": {"$sum": 1}}}
     ]))
