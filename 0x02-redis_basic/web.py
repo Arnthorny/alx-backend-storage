@@ -24,10 +24,12 @@ def url_tracker(f):
     """
     @wraps(f)
     def wrapper(url, *args, **kwargs):
+        """
+        Wrapper Function
+        """
         key = "count:{{{}}}".format(url)
         with r.pipeline() as pipe:
             if not r.exists(key):
-                print('here')
                 pipe.set(key, 0)
                 pipe.expire(key, 10)
             pipe.incr(key)
@@ -36,7 +38,7 @@ def url_tracker(f):
     return wrapper
 
 
-@url_tracker
+@url_tracker  # type: ignore
 def get_page(url: str) -> str:
     """
     Get Page Function

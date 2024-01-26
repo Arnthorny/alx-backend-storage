@@ -8,34 +8,34 @@ from typing import Any, Union, Callable
 from functools import wraps
 
 
-def count_calls(f):
+def count_calls(method: Callable) -> Callable:
     """
     Decorator function
     """
-    @wraps(f)
+    @wraps(method)
     def wrapper(self, *args, **kwargs):
         """
         Wrapper function
         """
-        self._redis.incr(f.__qualname__)
-        return f(self, *args, **kwargs)
+        self._redis.incr(method.__qualname__)
+        return method(self, *args, **kwargs)
     return wrapper
 
 
-def call_history(f):
+def call_history(method: Callable) -> Callable:
     """
     Decorator function
     """
-    @wraps(f)
+    @wraps(method)
     def wrapper(self, *args, **kwargs):
         """
         Wrapper function
         """
-        ip_key = "{}:inputs".format(f.__qualname__)
-        op_key = "{}:outputs".format(f.__qualname__)
+        ip_key = "{}:inputs".format(method.__qualname__)
+        op_key = "{}:outputs".format(method.__qualname__)
 
         self._redis.rpush(ip_key, str(args))
-        ret_val = f(self, *args, **kwargs)
+        ret_val = method(self, *args, **kwargs)
         self._redis.rpush(op_key, ret_val)
 
         return ret_val
@@ -50,8 +50,8 @@ def replay(fn: Callable[[str], Any]) -> None:
         fn(`obj`): Function to be replayed
     """
     r = redis.Redis()
-    inputs = r.lrange("{}:inputs".format(fn.__qualname__), 0, -1)
-    outputs = r.lrange("{}:outputs".format(fn.__qualname__), 0, -1)
+    inputs = list(r.lrange("{}:inputs".format(fn.__qualname__), 0, -1))
+    outputs = list(r.lrange("{}:outputs".format(fn.__qualname__), 0, -1))
 
     print("Cache.store was called {} times:".format(len(inputs)))
     for ip, op in zip(inputs, outputs):
@@ -84,7 +84,7 @@ class Cache:
         if self._redis.set(new_k, data):
             return new_k
 
-    def get(self, key: str, fn: Callable[[str], Any] = None) -> Any:
+    def get(self, key: str, fn: Union[Callable, None] = None) -> Any:
         """
         Get redis stored value in appropriate python format
         """
@@ -95,7 +95,7 @@ class Cache:
             return int(val)
         elif fn == str:
             return str(val)
-        elif type(fn).__name__ == 'function':
+        elif fn is not None and type(fn).__name__ == 'function':
             return fn(val)
         else:
             return val
