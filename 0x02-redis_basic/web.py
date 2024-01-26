@@ -27,13 +27,8 @@ def url_tracker(f):
         """
         Wrapper Function
         """
-        key = "count:{{{}}}".format(url)
-        with r.pipeline() as pipe:
-            if not r.exists(key):
-                pipe.set(key, 0)
-                pipe.expire(key, 10)
-            pipe.incr(key)
-            pipe.execute()
+        c_key = "count:{{{}}}".format(url)
+        r.incr(c_key)
         return f(url, *args, **kwargs)
     return wrapper
 
@@ -43,6 +38,13 @@ def get_page(url: str) -> str:
     """
     Get Page Function
     """
-    r = requests.get(url)
-    if r.status_code == requests.codes.ok:
-        return r.text
+    cache_url = r.get(url)
+    if not cache_url:
+        req = requests.get(url)
+        if req.status_code == requests.codes.ok:
+            with r.pipeline() as pipe:
+                pipe.set(url, req.text)
+                pipe.expire(url, 10)
+                pipe.execute()
+            return req.text
+    return cache_url
