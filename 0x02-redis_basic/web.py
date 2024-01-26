@@ -41,10 +41,9 @@ def get_page(url: str) -> str:
     cache_url = r.get(url)
     if not cache_url:
         req = requests.get(url)
-        if req.status_code == requests.codes.ok:
-            with r.pipeline() as pipe:
-                pipe.set(url, req.text)
-                pipe.expire(url, 10)
-                pipe.execute()
-            return req.text
+        with r.pipeline() as pipe:
+            pipe.set(url, req.text)
+            pipe.expire(url, 10)
+            pipe.execute()
+        return req.text
     return cache_url
