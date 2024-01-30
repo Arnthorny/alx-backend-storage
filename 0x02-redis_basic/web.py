@@ -27,7 +27,7 @@ def url_tracker(f):
         """
         Wrapper Function
         """
-        c_key = "count:{{{}}}".format(url)
+        c_key = "count:{}".format(url)
         r.incr(c_key)
         return f(url, *args, **kwargs)
     return wrapper
@@ -46,4 +46,4 @@ def get_page(url: str) -> str:
             pipe.expire(url, 10)
             pipe.execute()
         return req.text
-    return cache_url
+    return cache_url.decode('utf-8')
